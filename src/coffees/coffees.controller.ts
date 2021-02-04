@@ -7,7 +7,9 @@ import {
   Param,
   Post,
   Patch,
+  Delete,
 } from '@nestjs/common';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Coffee } from 'src/entities/coffee.entity';
 import { CoffeesService } from './coffees.service';
 import { CreateCoffeeDto } from './dto/create-coffee.dto';
@@ -17,27 +19,33 @@ import { UpdateCoffeeDto } from './dto/update-coffee.dto';
 export class CoffeesController {
   constructor(private readonly coffeeService: CoffeesService) {}
   @Get()
-  findAll(): Coffee[] {
+  findAll(): Promise<Coffee[]> {
     return this.coffeeService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string): Coffee {
+  findOne(@Param('id') id: number): Promise<Coffee> {
     return this.coffeeService.findOne(id);
   }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() createCoffeeDto: CreateCoffeeDto): string {
+  create(@Body() createCoffeeDto: CreateCoffeeDto): Promise<Coffee> {
     return this.coffeeService.create(createCoffeeDto);
   }
 
   @Patch(':id')
   @HttpCode(HttpStatus.OK)
   update(
-    @Param('id') id: string,
+    @Param('id') id: number,
     @Body() updateCoffeeDto: UpdateCoffeeDto,
-  ): string {
+  ): Promise<Coffee> {
     return this.coffeeService.update(id, updateCoffeeDto);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.OK)
+  remove(@Param('id') id: number): Promise<string> {
+    return this.coffeeService.remove(id);
   }
 }

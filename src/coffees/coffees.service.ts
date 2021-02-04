@@ -1,41 +1,43 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Coffee } from 'src/entities/coffee.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { CreateCoffeeDto } from './dto/create-coffee.dto';
+import { UpdateCoffeeDto } from './dto/update-coffee.dto';
 
 @Injectable()
 export class CoffeesService {
-  private coffees: Coffee[] = [];
-  findAll(): Coffee[] {
-    return this.coffees;
+  constructor(
+    @InjectRepository(Coffee)
+    private readonly coffeeRepository: Repository<Coffee>,
+  ) {}
+
+  async findAll(): Promise<Coffee[]> {
+    return await this.coffeeRepository.find();
   }
 
-  findOne(id: string): Coffee {
-    const convertedId: number = <number>new Number(id);
-    console.log(convertedId.valueOf());
-    const coffees: Coffee[] = this.coffees.filter((coffee) => {
-      if (coffee.id == convertedId.valueOf()) {
-        return coffee;
-      }
+  async findOne(id: number): Promise<Coffee> {
+    return await this.coffeeRepository.findOne(id);
+  }
+
+  async create(createCoffeeDto: CreateCoffeeDto): Promise<Coffee> {
+    const newCoffee = this.coffeeRepository.create(createCoffeeDto);
+    await this.coffeeRepository.save(newCoffee);
+    return newCoffee;
+  }
+
+  async update(id: number, updateCoffeeDto: UpdateCoffeeDto): Promise<Coffee> {
+    const coffeeToUpdate = await this.coffeeRepository.preload({
+      id: id,
+      ...updateCoffeeDto,
     });
-    if (coffees.length <= 0) {
-      throw new NotFoundException('Nothing found with this id');
-    }
-    return coffees[0];
+
+    return await this.coffeeRepository.save(coffeeToUpdate);
   }
 
-  create(coffee): string {
-    this.coffees.push(coffee);
-    return 'New coffee created';
-  }
-
-  update(id: string, body): string {
-    const convertedId = <number>new Number(id);
-    this.coffees.map((coffee) => {
-      if (coffee.id == convertedId) {
-        coffee[Object.keys(body)[0]] = body[Object.keys(body)[0]];
-        return;
-      }
-    });
-    console.log(this.coffees);
-    return 'Successfully Updated the requried field';
+  async remove(id: number): Promise<string> {
+    const coffeeToRemove = await this.coffeeRepository.findOne(id);
+    await this.coffeeRepository.remove(coffeeToRemove);
+    return 'Coffee removed successfully';
   }
 }

@@ -8,7 +8,9 @@ import {
   Post,
   Patch,
   Delete,
+  Query,
 } from '@nestjs/common';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Coffee } from 'src/entities/coffee.entity';
 import { CoffeesService } from './coffees.service';
@@ -19,8 +21,8 @@ import { UpdateCoffeeDto } from './dto/update-coffee.dto';
 export class CoffeesController {
   constructor(private readonly coffeeService: CoffeesService) {}
   @Get()
-  findAll(): Promise<Coffee[]> {
-    return this.coffeeService.findAll();
+  findAll(@Query() paginationDto: PaginationDto): Promise<Coffee[]> {
+    return this.coffeeService.findAll(paginationDto);
   }
 
   @Get(':id')

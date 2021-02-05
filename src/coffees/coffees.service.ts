@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import { CreateCoffeeDto } from './dto/create-coffee.dto';
 import { UpdateCoffeeDto } from './dto/update-coffee.dto';
 import { Flavor } from 'src/entities/flavor.entity';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 
 @Injectable()
 export class CoffeesService {
@@ -15,9 +16,12 @@ export class CoffeesService {
     private readonly flavorRepository: Repository<Flavor>,
   ) {}
 
-  async findAll(): Promise<Coffee[]> {
+  async findAll(paginationDto: PaginationDto): Promise<Coffee[]> {
+    const { limit, offset } = paginationDto;
     return await this.coffeeRepository.find({
       relations: ['flavors'],
+      skip: limit,
+      take: offset,
     });
   }
 

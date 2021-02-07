@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { Coffee } from 'src/entities/coffee.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Connection, Repository } from 'typeorm';
 import { CreateCoffeeDto } from './dto/create-coffee.dto';
 import { UpdateCoffeeDto } from './dto/update-coffee.dto';
 import { Flavor } from 'src/entities/flavor.entity';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
+import { Event } from '../events/entities/event.entity';
 
 @Injectable()
 export class CoffeesService {
@@ -14,6 +15,7 @@ export class CoffeesService {
     private readonly coffeeRepository: Repository<Coffee>,
     @InjectRepository(Flavor)
     private readonly flavorRepository: Repository<Flavor>,
+    private readonly connection: Connection,
   ) {}
 
   async findAll(paginationDto: PaginationDto): Promise<Coffee[]> {
@@ -76,8 +78,30 @@ export class CoffeesService {
       return flavor;
     }
 
-    const returnVal = await this.flavorRepository.create({ name });
+    const returnVal = this.flavorRepository.create({ name });
     console.log(returnVal);
     return returnVal;
+  }
+
+  async recommendCoffee(coffee: Coffee): Promise<void> {
+    const queryRunner = this.connection.createQueryRunner(); //Instantiating the queryRunner object
+    await queryRunner.connect(); //connecting to the database using queryRunner
+    await queryRunner.startTransaction(); //starting transactions
+
+    // make sure put everything in try and catch block
+    try {
+      coffee.recomendations++;
+      const event = new Event();
+      event.name = 'coffee_event';
+      event.type = 'coffee_recommendation';
+      event.payload = { coffee_id: coffee.id };
+      await queryRunner.manager.save(coffee);
+      await queryRunner.manager.save(event);
+      await queryRunner.commitTransaction();
+    } catch (e) {
+      await queryRunner.rollbackTransaction();
+    } finally {
+      await queryRunner.release();
+    }
   }
 }
